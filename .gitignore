@@ -1,0 +1,36 @@
+# --- Backend (Kotlin / Spring Boot / Gradle) ---
+.gradle/
+build/
+out/
+*.class
+.kotlin/
+!gradle/wrapper/gradle-wrapper.jar
+
+# --- Frontend (React / TypeScript / Vite) ---
+node_modules/
+dist/
+*.tsbuildinfo
+
+# --- Python (scripts de datos) ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# --- Dataset completo de Kaggle (pesa ~300 MB; en el repo va solo el recorte) ---
+database/dataset_crudo/kaggle/
+
+# --- Entorno y secretos ---
+.env
+.env.*
+!.env.example
+
+# --- IDEs y sistema operativo ---
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.log
+.DS_Store
+Thumbs.db
