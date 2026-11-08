@@ -1,0 +1,53 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: lol-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lol_telemetry}
+      POSTGRES_USER: ${POSTGRES_USER:-lol_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lol_dev_password}
+
+    ports:
+      - "127.0.0.1:5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/modelo_relacional.sql:/docker-entrypoint-initdb.d/01_modelo_relacional.sql:ro
+      - ./database/datos_iniciales.sql:/docker-entrypoint-initdb.d/02_datos_iniciales.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lol_user} -d ${POSTGRES_DB:-lol_telemetry}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: lol-influxdb
+    restart: unless-stopped
+   
+    ports:
+      - "127.0.0.1:8086:8086"
+
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_USERNAME:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_PASSWORD:-lol_influx_password}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUXDB_ORG:-unsam}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUXDB_BUCKET:-lol_snapshots}
+      DOCKER_INFLUXDB_INIT_RETENTION: 0s
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN:-tp-bbdd-token-local}
+
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+      # - ./database/scripts_nosql/snapshots.lp:/docker-entrypoint-initdb.d/snapshots.lp:ro
+      # - ./database/scripts_nosql/01_cargar_snapshots.sh:/docker-entrypoint-initdb.d/01_cargar_snapshots.sh:ro
+
+volumes:
+  postgres_data:
+  influxdb_data:
+  influxdb_config:
