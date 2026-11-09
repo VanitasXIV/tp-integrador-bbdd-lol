@@ -1,0 +1,25 @@
+# Los valores por defecto coinciden con docker-compose.yaml y .env.example
+# de la raíz del repo. Se pueden cambiar con variables de entorno.
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: lol-backend
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:lol_telemetry}
+    username: ${POSTGRES_USER:lol_user}
+    password: ${POSTGRES_PASSWORD:lol_dev_password}
+
+influx:
+  url: ${INFLUXDB_URL:http://localhost:8086}
+  token: ${INFLUXDB_TOKEN:tp-bbdd-token-local}
+  org: ${INFLUXDB_ORG:unsam}
+  bucket: ${INFLUXDB_BUCKET:lol_snapshots}
+
+app:
+  # Motor que se usa para los listados cuando el request no indica ninguno.
+  # Valores: postgres | influx
+  motor-por-defecto: ${MOTOR_POR_DEFECTO:postgres}
+  # Orígenes del frontend autorizados (Vite usa el 5173).
+  cors-origenes: ${CORS_ORIGENES:http://localhost:5173}
