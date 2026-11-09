@@ -1,11 +1,24 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-echo "Cargando snapshots de League of Legends en InfluxDB automáticamente..."
+echo "Cargando snapshots de League of Legends en InfluxDB..."
+
+test -f /data/snapshots.lp
+
+MARKER_FILE="/var/lib/loader/.snapshots_loaded"
+
+if [ -f "$MARKER_FILE" ]; then
+  echo "Los snapshots ya fueron cargados. No se vuelve a ejecutar la carga."
+  exit 0
+fi
+
 influx write \
-  --org "${DOCKER_INFLUXDB_INIT_ORG}" \
-  --bucket "${DOCKER_INFLUXDB_INIT_BUCKET}" \
-  --token "${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}" \
-  --file /docker-entrypoint-initdb.d/snapshots.lp
+  --host "${INFLUX_HOST:-http://influxdb:8086}" \
+  --org "${DOCKER_INFLUXDB_INIT_ORG:?Falta la organización de InfluxDB}" \
+  --bucket "${DOCKER_INFLUXDB_INIT_BUCKET:?Falta el bucket de InfluxDB}" \
+  --token "${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:?Falta el token de InfluxDB}" \
+  --file /data/snapshots.lp \
+  --precision s
 
-echo "¡Datos cargados con éxito en el inicio de InfluxDB!"
+touch "$MARKER_FILE"
+echo "Snapshots cargados correctamente."
