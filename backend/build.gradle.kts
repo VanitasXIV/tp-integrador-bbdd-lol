@@ -38,6 +38,15 @@ kotlin {
     }
 }
 
+// La JVM corre en UTC (ver LolBackendApplication.kt): tests y bootRun incluidos.
+tasks.withType<Test>().configureEach {
+    systemProperty("user.timezone", "UTC")
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    systemProperty("user.timezone", "UTC")
+}
+
 // `./gradlew test` corre solo los tests unitarios (no necesitan bases).
 // `./gradlew testIntegracion` corre los que usan PostgreSQL e InfluxDB:
 // requieren `docker compose up -d` en la raíz del repo.
