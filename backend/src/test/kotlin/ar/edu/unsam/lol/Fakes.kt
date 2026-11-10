@@ -41,6 +41,7 @@ class FakePartidaInfoRepository(
     override fun listar() = partidas
     override fun buscar(partidaId: String) = partidas.find { it.id == partidaId }
     override fun buscarParticipante(participanteId: Long) = participantes.find { it.id == participanteId }
+    override fun nombresDeRoles() = mapOf("TOP" to "Top", "JUNGLE" to "Jungla", "MIDDLE" to "Medio", "BOTTOM" to "Tirador", "UTILITY" to "Soporte")
 }
 
 class FakeSnapshotRepository : SnapshotRepository {
@@ -64,6 +65,10 @@ class FakeSnapshotRepository : SnapshotRepository {
     override fun ultimosPorParticipante(partidaId: String, inicio: LocalDateTime) =
         datos.entries.groupBy { it.key.first }.mapValues { (_, v) -> v.maxBy { it.key.second }.value }
 
-    override fun curvaOro(partidaId: String, inicio: LocalDateTime) = emptyList<PuntoCurvaOro>()
+    /** Todos los snapshots del fake son de PARTIDA. */
+    override fun oroTotalPorPartida() =
+        if (datos.isEmpty()) emptyMap() else mapOf(PARTIDA to ultimosPorParticipante(PARTIDA, INICIO).values.sumOf { it.oroTotal })
+
+    override fun curvaOro(partidaId: String, inicio: LocalDateTime) = listOf(PuntoCurvaOro(5, 8229, 10080, -1851))
     override fun objetivos(partidaId: String, inicio: LocalDateTime) = emptyList<ObjetivosEquipo>()
 }

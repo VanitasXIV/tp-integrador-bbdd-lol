@@ -35,24 +35,34 @@ class PartidaServiceTest {
     private val servicio = PartidaService(repositorios, FakePartidaInfoRepository(), snapshots)
 
     @Test
-    fun `el listado sale del motor elegido y se completa con datos de PostgreSQL`() {
+    fun `el listado sale del motor elegido y se completa con PostgreSQL e InfluxDB`() {
+        snapshots.datos[TOP_AZUL.id to 10] = snapshot(10, oroTotal = 3000)
         assertEquals(1, servicio.listar(Motor.POSTGRES).size)
         val influx = servicio.listar(Motor.INFLUX)
         assertEquals(2, influx.size)
         val conocida = influx.first { it.id == PARTIDA }
+        assertEquals(INICIO, conocida.fecha)
         assertEquals("16.2", conocida.parche)
         assertEquals("ROJO", conocida.equipoGanador)
-        assertNull(influx.first { it.id == "EUW1_SOLO_INFLUX" }.duracionSegundos)
+        assertEquals(3000L, conocida.oroTotal)
+        val desconocida = influx.first { it.id == "EUW1_SOLO_INFLUX" }
+        assertNull(desconocida.duracionSegundos)
+        assertNull(desconocida.oroTotal)
     }
 
     @Test
-    fun `el detalle trae los participantes con sus estadisticas finales`() {
+    fun `el detalle trae los jugadores con sus estadisticas finales y la curva de oro`() {
         snapshots.datos[TOP_AZUL.id to 5] = snapshot(5)
         snapshots.datos[TOP_AZUL.id to 10] = snapshot(10, oroTotal = 3000)
         val detalle = servicio.detalle(PARTIDA, Motor.INFLUX)
         assertEquals("25:28", detalle.duracion)
-        assertEquals(3000, detalle.participantes.single().estadisticasFinales?.oroTotal)
-        assertEquals("AZUL", detalle.participantes.single().equipo)
+        assertEquals(3000L, detalle.oroTotal)
+        assertEquals(1, detalle.curvaOro.size)
+        val jugador = detalle.jugadores.single()
+        assertEquals("Top", jugador.nombre)
+        assertEquals("AZUL", jugador.equipo)
+        assertEquals(3000L, jugador.oroTotal)
+        assertEquals(1L, jugador.kills)
     }
 
     @Test
@@ -78,6 +88,14 @@ class SnapshotServiceTest {
 
         servicio.eliminar(PARTIDA, TOP_AZUL.id, 7)
         assertTrue(servicio.listar(PARTIDA, TOP_AZUL.id).isEmpty())
+    }
+
+    @Test
+    fun `las mediciones son los snapshots con el formato del frontend`() {
+        servicio.crear(PARTIDA, TOP_AZUL.id, entrada(minuto = 7, oroTotal = 1800))
+        val m = servicio.mediciones(PARTIDA, TOP_AZUL.id).single()
+        assertEquals(7, m.id)
+        assertEquals(1800L, m.oro)
     }
 
     @Test

@@ -73,4 +73,7 @@ class PostgresPartidaInfoRepository(private val jdbc: JdbcTemplate) : PartidaInf
 
     override fun buscarParticipante(participanteId: Long): ParticipanteResumen? =
         jdbc.query("$SELECT_PARTICIPANTE WHERE pa.id = ?", participanteMapper, participanteId).firstOrNull()
+
+    override fun nombresDeRoles(): Map<String, String> =
+        jdbc.query("SELECT codigo, nombre FROM roles") { rs, _ -> rs.getString("codigo") to rs.getString("nombre") }.toMap()
 }

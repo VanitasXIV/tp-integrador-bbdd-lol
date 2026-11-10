@@ -210,6 +210,20 @@ class InfluxSnapshotRepository(client: InfluxDBClient, props: InfluxProperties) 
         return consultar(query).associate { it.texto("participant_id").toLong() to aSnapshot(it, ini) }
     }
 
+    override fun oroTotalPorPartida(): Map<String, Long> {
+        // last() actúa sobre cada serie (un jugador); después se suma por partida.
+        val query = """
+            $desde
+              |> range(start: $DESDE_SIEMPRE)
+              |> filter(fn: (r) => r._measurement == "$M_PARTICIPANTE" and r._field == "total_gold")
+              |> last()
+              |> group(columns: ["match_id"])
+              |> sum()
+              |> group()
+        """.trimIndent()
+        return consultar(query).associate { it.texto("match_id") to it.long("_value") }
+    }
+
     /** Consulta compleja (punto 7): oro total de cada lado por minuto y su diferencia. */
     override fun curvaOro(partidaId: String, inicio: LocalDateTime): List<PuntoCurvaOro> {
         val ini = inicio.utc()
