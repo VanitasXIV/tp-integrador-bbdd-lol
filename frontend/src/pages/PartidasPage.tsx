@@ -1,6 +1,5 @@
-import { Fragment, useState } from 'react'
+import { Fragment } from 'react'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
@@ -14,7 +13,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
 import { useNavigate, useParams } from 'react-router-dom'
-import { generarPartida, listarPartidas } from '../api/partidas'
+import { listarPartidas } from '../api/partidas'
 import { Estado } from '../components/Estado'
 import { JugadorModal } from '../components/JugadorModal'
 import { PartidaDetalle } from '../components/PartidaDetalle'
@@ -30,44 +29,16 @@ export function PartidasPage() {
 
   const { data, loading, error, reload } = useAsync(listarPartidas, [])
 
-  const [generando, setGenerando] = useState(false)
-  const [errorGenerar, setErrorGenerar] = useState<string>()
-
-  async function generar() {
-    setGenerando(true)
-    setErrorGenerar(undefined)
-    try {
-      const nueva = await generarPartida()
-      reload()
-      navigate(`/partidas/${nueva.id}`)
-    } catch (e) {
-      setErrorGenerar(e instanceof Error ? e.message : 'No se pudo generar la partida.')
-    } finally {
-      setGenerando(false)
-    }
-  }
-
   const alternar = (id: string) => navigate(seleccionada === id ? '/' : `/partidas/${id}`)
 
   return (
     <>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
-          <Typography variant="h1" component="h1">
-            Partidas
-          </Typography>
-          <Typography color="text.secondary">Elegí una partida para ver su detalle.</Typography>
-        </Box>
-        <Button variant="contained" onClick={generar} disabled={generando}>
-          {generando ? 'Generando…' : 'Generar nueva partida'}
-        </Button>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h1" component="h1">
+          Partidas
+        </Typography>
+        <Typography color="text.secondary">Elegí una partida para ver su detalle.</Typography>
       </Box>
-
-      {errorGenerar && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorGenerar(undefined)}>
-          {errorGenerar}
-        </Alert>
-      )}
 
       <Estado loading={loading && !data} error={error} onRetry={reload}>
         <TableContainer component={Paper}>
