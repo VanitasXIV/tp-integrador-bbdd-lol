@@ -5,6 +5,7 @@ import ar.edu.unsam.lol.dominio.PuntoCurvaOro
 import ar.edu.unsam.lol.dominio.Snapshot
 import ar.edu.unsam.lol.motor.Motor
 import ar.edu.unsam.lol.motor.MotorResolver
+import ar.edu.unsam.lol.servicio.Medicion
 import ar.edu.unsam.lol.servicio.PartidaDetalle
 import ar.edu.unsam.lol.servicio.PartidaListado
 import ar.edu.unsam.lol.servicio.PartidaService
@@ -40,6 +41,7 @@ class MotorController(private val resolver: MotorResolver) {
 @RequestMapping("/partidas")
 class PartidaController(
     private val servicio: PartidaService,
+    private val snapshots: SnapshotService,
     private val resolver: MotorResolver,
 ) {
 
@@ -61,6 +63,11 @@ class PartidaController(
         val motor = resolver.resolver(parametro, header)
         return conMotor(motor, servicio.detalle(partidaId, motor))
     }
+
+    /** Snapshots de un jugador con el formato que usa el frontend (solo lectura). */
+    @GetMapping("/{partidaId}/jugadores/{jugadorId}/mediciones")
+    fun mediciones(@PathVariable partidaId: String, @PathVariable jugadorId: Long): List<Medicion> =
+        snapshots.mediciones(partidaId, jugadorId)
 
     @GetMapping("/{partidaId}/curva-oro")
     fun curvaOro(@PathVariable partidaId: String): List<PuntoCurvaOro> = servicio.curvaOro(partidaId)

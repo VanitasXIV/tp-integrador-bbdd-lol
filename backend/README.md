@@ -55,7 +55,7 @@ El servicio recibe todas las implementaciones y elige una según el motor del re
 Los datos que existen en **un solo motor** se leen siempre de ahí:
 
 - Solo PostgreSQL (`PartidaInfoRepository`): duración, versión del juego, lado ganador y rango promedio.
-- Solo InfluxDB (`SnapshotRepository`): snapshots de participante (CRUD), curva de oro y objetivos de equipo.
+- Solo InfluxDB (`SnapshotRepository`): snapshots de participante (CRUD), oro total, curva de oro y objetivos de equipo.
 
 ### Cómo se elige el motor
 
@@ -77,50 +77,82 @@ Base: `http://localhost:8080`. Fechas en ISO-8601 sin zona (`2026-01-23T08:21:47
 { "porDefecto": "postgres", "disponibles": ["postgres", "influx"] }
 ```
 
+Los nombres de los campos siguen los tipos del frontend (`frontend/src/types.ts`).
+
 ### `GET /partidas` — polimórfico
 
 ```json
 [
   {
     "id": "EUW1_7707901123",
-    "fechaInicio": "2026-01-30T00:20:43",
+    "fecha": "2026-01-30T00:20:43",
     "duracionSegundos": 1824,
-    "parche": "16.2",
     "equipoGanador": "AZUL",
-    "rangoPromedio": "DIAMOND"
+    "parche": "16.2",
+    "rangoPromedio": "DIAMOND",
+    "oroTotal": 129035
   }
 ]
 ```
 
-`id` y `fechaInicio` salen del motor elegido; el resto, de PostgreSQL. Ordenado de la partida más reciente a la más antigua.
+- `id` y `fecha` salen del motor elegido.
+- `duracionSegundos`, `equipoGanador`, `parche` y `rangoPromedio` salen de PostgreSQL.
+- `oroTotal` sale de InfluxDB: la suma del oro total de los 10 jugadores en su último snapshot.
+
+Ordenado de la partida más reciente a la más antigua.
 
 ### `GET /partidas/{id}` — polimórfico
 
 ```json
 {
   "id": "EUW1_7697601501",
-  "fechaInicio": "2026-01-23T08:21:47",
+  "fecha": "2026-01-23T08:21:47",
   "duracionSegundos": 1528,
   "duracion": "25:28",
+  "equipoGanador": "ROJO",
+  "ladoGanador": 200,
+  "oroTotal": 106027,
   "versionJuego": "16.2.740.1491",
   "parche": "16.2",
-  "ladoGanador": 200,
-  "equipoGanador": "ROJO",
   "rangoPromedio": "MASTER",
-  "participantes": [
+  "curvaOro": [
+    { "minuto": 5, "oroAzul": 8229, "oroRojo": 10080, "diferencia": -1851 }
+  ],
+  "jugadores": [
     {
       "id": 5021,
+      "nombre": "Top",
       "lado": 100,
       "equipo": "AZUL",
       "rol": "TOP",
       "campeon": "Kennen",
-      "estadisticasFinales": { "minuto": 25, "oroActual": 376, "oroTotal": 8756, "cs": 170, "csJungla": 0, "xp": 12257, "nivel": 14, "kills": 2, "deaths": 8, "assists": 3 }
+      "kills": 2,
+      "deaths": 8,
+      "assists": 3,
+      "oroTotal": 8756,
+      "cs": 170,
+      "nivel": 14
     }
   ]
 }
 ```
 
-Los participantes (ordenados por lado y por rol: TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY) salen del motor elegido. `estadisticasFinales` es el último snapshot del participante en InfluxDB (`null` si no tiene).
+- Los jugadores (ordenados por lado y por rol: TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY) salen del motor elegido.
+- El dataset no tiene nombres de invocador: `nombre` es el nombre del rol (tabla `roles`).
+- `kills`, `deaths`, `assists`, `oroTotal`, `cs` y `nivel` son del último snapshot del jugador en InfluxDB (0 si no tiene snapshots).
+- `curvaOro` es la misma lista que devuelve `GET /partidas/{id}/curva-oro`.
+
+### `GET /partidas/{id}/jugadores/{jugadorId}/mediciones`
+
+Los snapshots de un jugador con el formato de "medición" del frontend, ordenados por minuto (InfluxDB, solo lectura). `id` es el minuto y `oro` es el oro total.
+
+```json
+[
+  { "id": 5, "minuto": 5, "oro": 1605, "oroActual": 405, "cs": 34, "csJungla": 0, "xp": 2055, "nivel": 5, "kills": 0, "deaths": 1, "assists": 0 }
+]
+```
+
+El dataset no tiene daño por minuto. Para dar de alta, modificar o borrar, se usan las rutas de snapshots (abajo).
 
 ### `GET /partidas/{id}/curva-oro`
 

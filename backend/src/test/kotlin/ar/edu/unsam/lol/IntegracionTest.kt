@@ -1,6 +1,7 @@
 package ar.edu.unsam.lol
 
 import ar.edu.unsam.lol.motor.Motor
+import ar.edu.unsam.lol.servicio.PartidaService
 import ar.edu.unsam.lol.servicio.RepositoriosPorMotor
 import ar.edu.unsam.lol.servicio.SnapshotEntrada
 import ar.edu.unsam.lol.servicio.SnapshotService
@@ -21,6 +22,7 @@ import kotlin.test.assertNull
 class IntegracionTest(
     @Autowired private val repositorios: RepositoriosPorMotor,
     @Autowired private val snapshots: SnapshotService,
+    @Autowired private val partidas: PartidaService,
 ) {
 
     @Test
@@ -38,6 +40,19 @@ class IntegracionTest(
         val influx = partidas.flatMap { repositorios.participantes(Motor.INFLUX).listarPorPartida(it.id) }
         assertEquals(1000, postgres.size)
         assertEquals(postgres, influx)
+    }
+
+    @Test
+    fun `listado y detalle iguales con los dos motores y con oro total`() {
+        val postgres = partidas.listar(Motor.POSTGRES)
+        assertEquals(postgres, partidas.listar(Motor.INFLUX))
+        assertEquals(100, postgres.count { (it.oroTotal ?: 0) > 0 })
+
+        val detalle = partidas.detalle(PARTIDA, Motor.POSTGRES)
+        assertEquals(detalle, partidas.detalle(PARTIDA, Motor.INFLUX))
+        assertEquals(10, detalle.jugadores.size)
+        assertEquals(postgres.first { it.id == PARTIDA }.oroTotal, detalle.oroTotal)
+        assertEquals(snapshots.listar(PARTIDA, TOP_AZUL.id).size, detalle.curvaOro.size)
     }
 
     @Test

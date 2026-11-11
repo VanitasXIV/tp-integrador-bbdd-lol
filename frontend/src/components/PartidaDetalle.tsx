@@ -15,7 +15,7 @@ import { CurvaOro } from './CurvaOro'
 import { Estado } from './Estado'
 
 interface Props {
-  partidaId: number
+  partidaId: string
   onVerJugador: (jugadorId: number) => void
 }
 

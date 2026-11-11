@@ -28,7 +28,7 @@ export function MedicionesTabla({ mediciones }: Props) {
             <TableCell>Minuto</TableCell>
             <TableCell>Oro</TableCell>
             <TableCell>CS</TableCell>
-            <TableCell>Daño</TableCell>
+            <TableCell>XP</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -37,7 +37,7 @@ export function MedicionesTabla({ mediciones }: Props) {
               <TableCell>{m.minuto}</TableCell>
               <TableCell>{formatMiles(m.oro)}</TableCell>
               <TableCell>{m.cs}</TableCell>
-              <TableCell>{formatMiles(m.dano)}</TableCell>
+              <TableCell>{formatMiles(m.xp)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

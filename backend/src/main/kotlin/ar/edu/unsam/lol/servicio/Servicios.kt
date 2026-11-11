@@ -22,38 +22,74 @@ import java.time.LocalDateTime
 //  serializan tal cual a JSON).
 // =====================================================================
 
+// Los nombres de los campos siguen los tipos del frontend (frontend/src/types.ts).
+
+/** Una fila del listado de partidas. */
 data class PartidaListado(
+    // Del motor elegido:
     val id: String,
-    val fechaInicio: LocalDateTime,
-    // Datos que solo existen en PostgreSQL (null si la partida no está ahí).
+    val fecha: LocalDateTime,
+    // Solo en PostgreSQL (null si la partida no está ahí):
     val duracionSegundos: Int?,
-    val parche: String?,
     val equipoGanador: String?,
+    val parche: String?,
     val rangoPromedio: String?,
+    // Solo en InfluxDB: oro total que juntaron los 10 jugadores en la partida.
+    val oroTotal: Long?,
 )
 
-data class ParticipanteDetalle(
+/** Un participante con sus estadísticas al final de la partida. */
+data class Jugador(
     val id: Long,
+    /** El dataset no tiene nombres de invocador: se muestra el rol ("Top", "Jungla"…). */
+    val nombre: String,
     val lado: Int,
     val equipo: String,
     val rol: String,
     val campeon: String,
-    /** Estadísticas del último snapshot (InfluxDB); null si no tiene snapshots. */
-    val estadisticasFinales: Snapshot?,
+    // Del último snapshot en InfluxDB (0 si no tiene snapshots).
+    val kills: Long,
+    val deaths: Long,
+    val assists: Long,
+    val oroTotal: Long,
+    val cs: Long,
+    val nivel: Long,
 )
 
 data class PartidaDetalle(
     val id: String,
-    val fechaInicio: LocalDateTime,
+    val fecha: LocalDateTime,
     val duracionSegundos: Int,
     val duracion: String,
+    val equipoGanador: String,
+    val ladoGanador: Int,
+    val oroTotal: Long,
     val versionJuego: String,
     val parche: String,
-    val ladoGanador: Int,
-    val equipoGanador: String,
     val rangoPromedio: String,
-    val participantes: List<ParticipanteDetalle>,
+    val curvaOro: List<PuntoCurvaOro>,
+    val jugadores: List<Jugador>,
 )
+
+/** Snapshot con el formato de "medición" del frontend: `id` es el minuto y `oro` el oro total. */
+data class Medicion(
+    val id: Int,
+    val minuto: Int,
+    val oro: Long,
+    val oroActual: Long,
+    val cs: Long,
+    val csJungla: Long,
+    val xp: Long,
+    val nivel: Long,
+    val kills: Long,
+    val deaths: Long,
+    val assists: Long,
+) {
+    companion object {
+        fun de(s: Snapshot) =
+            Medicion(s.minuto, s.minuto, s.oroTotal, s.oroActual, s.cs, s.csJungla, s.xp, s.nivel, s.kills, s.deaths, s.assists)
+    }
+}
 
 /** Cuerpo de alta y modificación de un snapshot. */
 data class SnapshotEntrada(
@@ -107,40 +143,63 @@ class PartidaService(
     private val snapshots: SnapshotRepository,
 ) {
 
-    /** Listado polimórfico: id y fecha salen del motor elegido; el resto, de PostgreSQL. */
+    /**
+     * Listado polimórfico: id y fecha salen del motor elegido; duración, ganador,
+     * parche y rango, de PostgreSQL; el oro total, de InfluxDB.
+     */
     fun listar(motor: Motor): List<PartidaListado> {
         val infoPorId = info.listar().associateBy { it.id }
+        val oroPorPartida = snapshots.oroTotalPorPartida()
         return repositorios.partidas(motor).listar().map { p ->
             val i = infoPorId[p.id]
             PartidaListado(
                 id = p.id,
-                fechaInicio = p.fechaInicio,
+                fecha = p.fechaInicio,
                 duracionSegundos = i?.duracionSegundos,
-                parche = i?.let { parche(it.versionJuego) },
                 equipoGanador = i?.let { Lados.nombre(it.ladoGanador) },
+                parche = i?.let { parche(it.versionJuego) },
                 rangoPromedio = i?.rangoPromedio,
+                oroTotal = oroPorPartida[p.id],
             )
         }
     }
 
-    /** Detalle: participantes del motor elegido + estadísticas finales de InfluxDB. */
+    /** Detalle: jugadores del motor elegido + estadísticas finales y curva de oro de InfluxDB. */
     fun detalle(partidaId: String, motor: Motor): PartidaDetalle {
         val partida = buscarPartida(partidaId)
         val finales = snapshots.ultimosPorParticipante(partidaId, partida.fechaInicio)
-        val participantes = repositorios.participantes(motor).listarPorPartida(partidaId).map { p ->
-            ParticipanteDetalle(p.id, p.lado, Lados.nombre(p.lado), p.rol, p.campeon, finales[p.id])
+        val nombresRoles = info.nombresDeRoles()
+        val jugadores = repositorios.participantes(motor).listarPorPartida(partidaId).map { p ->
+            val f = finales[p.id]
+            Jugador(
+                id = p.id,
+                nombre = nombresRoles[p.rol] ?: p.rol,
+                lado = p.lado,
+                equipo = Lados.nombre(p.lado),
+                rol = p.rol,
+                campeon = p.campeon,
+                kills = f?.kills ?: 0,
+                deaths = f?.deaths ?: 0,
+                assists = f?.assists ?: 0,
+                oroTotal = f?.oroTotal ?: 0,
+                cs = f?.cs ?: 0,
+                nivel = f?.nivel ?: 0,
+            )
         }
         return PartidaDetalle(
             id = partida.id,
-            fechaInicio = partida.fechaInicio,
+            fecha = partida.fechaInicio,
             duracionSegundos = partida.duracionSegundos,
             duracion = duracionTexto(partida.duracionSegundos),
+            equipoGanador = Lados.nombre(partida.ladoGanador),
+            ladoGanador = partida.ladoGanador,
+            // Mismo cálculo que el listado: suma del último oro total de cada jugador.
+            oroTotal = finales.values.sumOf { it.oroTotal },
             versionJuego = partida.versionJuego,
             parche = parche(partida.versionJuego),
-            ladoGanador = partida.ladoGanador,
-            equipoGanador = Lados.nombre(partida.ladoGanador),
             rangoPromedio = partida.rangoPromedio,
-            participantes = participantes,
+            curvaOro = snapshots.curvaOro(partidaId, partida.fechaInicio),
+            jugadores = jugadores,
         )
     }
 
@@ -183,6 +242,10 @@ class SnapshotService(
         val c = contexto(partidaId, participanteId)
         return snapshots.listar(c.participante, c.partida.fechaInicio)
     }
+
+    /** Los mismos snapshots con el formato de "medición" que usa el frontend. */
+    fun mediciones(partidaId: String, participanteId: Long): List<Medicion> =
+        listar(partidaId, participanteId).map(Medicion::de)
 
     fun obtener(partidaId: String, participanteId: Long, minuto: Int): Snapshot {
         val c = contexto(partidaId, participanteId)
