@@ -4,6 +4,9 @@ import type { Medicion, ObjetivosEquipo, Partida, PartidaDetalle, Snapshot } fro
 // Ajustá estas rutas a los endpoints reales del backend.
 export const listarPartidas = () => http<Partida[]>('/partidas')
 
+export const crearPartidaSimulada = () =>
+  http<Partida>('/partidas/simulada', { method: 'POST' })
+
 export const obtenerPartida = (id: string) => http<PartidaDetalle>(`/partidas/${id}`)
 
 export const listarMediciones = (partidaId: string, jugadorId: number) =>

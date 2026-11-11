@@ -28,6 +28,6 @@ export function formatRango(rango: string): string {
   return RANGOS[rango] ?? rango
 }
 
-export function formatMiles(n: number): string {
-  return n.toLocaleString('es-AR')
+export function formatMiles(n: number | null | undefined): string {
+  return n == null ? '—' : n.toLocaleString('es-AR')
 }

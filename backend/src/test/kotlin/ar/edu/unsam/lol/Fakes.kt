@@ -6,6 +6,7 @@ import ar.edu.unsam.lol.dominio.PartidaResumen
 import ar.edu.unsam.lol.dominio.ParticipanteResumen
 import ar.edu.unsam.lol.dominio.PuntoCurvaOro
 import ar.edu.unsam.lol.dominio.Snapshot
+import ar.edu.unsam.lol.dominio.SnapshotEquipo
 import ar.edu.unsam.lol.motor.Motor
 import ar.edu.unsam.lol.repositorio.PartidaInfoRepository
 import ar.edu.unsam.lol.repositorio.PartidaRepository
@@ -71,4 +72,5 @@ class FakeSnapshotRepository : SnapshotRepository {
 
     override fun curvaOro(partidaId: String, inicio: LocalDateTime) = listOf(PuntoCurvaOro(5, 8229, 10080, -1851))
     override fun objetivos(partidaId: String, inicio: LocalDateTime) = emptyList<ObjetivosEquipo>()
+    override fun guardarEquipo(partidaId: String, snapshot: SnapshotEquipo, inicio: LocalDateTime) = Unit
 }

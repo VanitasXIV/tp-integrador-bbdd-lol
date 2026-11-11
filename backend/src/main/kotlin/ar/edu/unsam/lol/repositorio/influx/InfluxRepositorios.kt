@@ -8,6 +8,7 @@ import ar.edu.unsam.lol.dominio.PartidaResumen
 import ar.edu.unsam.lol.dominio.ParticipanteResumen
 import ar.edu.unsam.lol.dominio.PuntoCurvaOro
 import ar.edu.unsam.lol.dominio.Snapshot
+import ar.edu.unsam.lol.dominio.SnapshotEquipo
 import ar.edu.unsam.lol.motor.Motor
 import ar.edu.unsam.lol.repositorio.PartidaRepository
 import ar.edu.unsam.lol.repositorio.ParticipanteRepository
@@ -184,6 +185,27 @@ class InfluxSnapshotRepository(client: InfluxDBClient, props: InfluxProperties) 
         client.writeApiBlocking.writePoint(props.bucket, props.org, punto)
     }
 
+    override fun guardarEquipo(partidaId: String, snapshot: SnapshotEquipo, inicio: LocalDateTime) {
+        val t = inicio.utc().plus(Duration.ofMinutes(snapshot.minuto.toLong()))
+        val punto = Point.measurement(M_EQUIPO)
+            .addTag("match_id", partidaId)
+            .addTag("side", snapshot.lado.toString())
+            .addField("towers", snapshot.torres)
+            .addField("inhibitors", snapshot.inhibidores)
+            .addField("dragons_fire", snapshot.dragonesFuego)
+            .addField("dragons_water", snapshot.dragonesAgua)
+            .addField("dragons_earth", snapshot.dragonesTierra)
+            .addField("dragons_air", snapshot.dragonesAire)
+            .addField("dragons_chemtech", snapshot.dragonesQuimtec)
+            .addField("dragons_hextech", snapshot.dragonesHextech)
+            .addField("dragons_elder", snapshot.dragonesElder)
+            .addField("barons", snapshot.barones)
+            .addField("void_grubs", snapshot.larvasVacio)
+            .addField("heralds", snapshot.heraldos)
+            .time(t, WritePrecision.S)
+        client.writeApiBlocking.writePoint(props.bucket, props.org, punto)
+    }
+
     override fun eliminar(participante: ParticipanteResumen, inicio: LocalDateTime, minuto: Int) {
         val t = inicio.utc().plus(Duration.ofMinutes(minuto.toLong()))
         // InfluxDB no tiene DELETE por id: se borra por predicado sobre tags
@@ -216,6 +238,8 @@ class InfluxSnapshotRepository(client: InfluxDBClient, props: InfluxProperties) 
             $desde
               |> range(start: $DESDE_SIEMPRE)
               |> filter(fn: (r) => r._measurement == "$M_PARTICIPANTE" and r._field == "total_gold")
+              |> group(columns: ["match_id", "participant_id"])
+              |> sort(columns: ["_time"])
               |> last()
               |> group(columns: ["match_id"])
               |> sum()
