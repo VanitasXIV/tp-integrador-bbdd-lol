@@ -1,4 +1,4 @@
-import { useMemo, type ReactElement } from 'react'
+import { useMemo, useState, type ReactElement } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
 import Box from '@mui/material/Box'
 import Dialog from '@mui/material/Dialog'
@@ -22,6 +22,7 @@ import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO, HEXTECH, ORO } from '../theme'
 import { Estado } from './Estado'
 import { MedicionesTabla } from './MedicionesTabla'
+import { SnapshotDetalle } from './SnapshotDetalle'
 
 interface Props {
   partidaId: string
@@ -45,6 +46,8 @@ function Grafico({ titulo, children }: { titulo: string; children: ReactElement 
 }
 
 export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
+  const [minutoAbierto, setMinutoAbierto] = useState<number | null>(null)
+
   const { data, loading, error, reload } = useAsync(
     async () => {
       const [partida, mediciones] = await Promise.all([
@@ -119,8 +122,17 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
             <Typography variant="h3" sx={{ mb: 1 }}>
               Mediciones
             </Typography>
-            <MedicionesTabla mediciones={ordenadas} />
+            <MedicionesTabla mediciones={ordenadas} seleccionado={minutoAbierto} onVer={setMinutoAbierto} />
           </Box>
+
+          {minutoAbierto !== null && (
+            <SnapshotDetalle
+              partidaId={partidaId}
+              jugadorId={jugadorId}
+              minuto={minutoAbierto}
+              onClose={() => setMinutoAbierto(null)}
+            />
+          )}
         </Estado>
       </DialogContent>
     </Dialog>

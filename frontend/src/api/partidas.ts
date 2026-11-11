@@ -1,5 +1,5 @@
 import { http } from './client'
-import type { Medicion, Partida, PartidaDetalle } from '../types'
+import type { Medicion, Partida, PartidaDetalle, Snapshot } from '../types'
 
 // Ajustá estas rutas a los endpoints reales del backend.
 export const listarPartidas = () => http<Partida[]>('/partidas')
@@ -8,3 +8,7 @@ export const obtenerPartida = (id: string) => http<PartidaDetalle>(`/partidas/${
 
 export const listarMediciones = (partidaId: string, jugadorId: number) =>
   http<Medicion[]>(`/partidas/${partidaId}/jugadores/${jugadorId}/mediciones`)
+
+/** Un snapshot puntual (participante + minuto). Responde 404 si no existe. */
+export const obtenerSnapshot = (partidaId: string, jugadorId: number, minuto: number) =>
+  http<Snapshot>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${minuto}`)
