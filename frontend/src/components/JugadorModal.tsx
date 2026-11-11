@@ -1,6 +1,8 @@
 import { useMemo, useState, type ReactElement } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
+import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -17,10 +19,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { listarMediciones, obtenerPartida } from '../api/partidas'
+import { crearSnapshot, listarMediciones, obtenerPartida } from '../api/partidas'
 import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO, HEXTECH, ORO } from '../theme'
 import { Estado } from './Estado'
+import { MedicionForm } from './MedicionForm'
 import { MedicionesTabla } from './MedicionesTabla'
 import { SnapshotDetalle } from './SnapshotDetalle'
 
@@ -47,6 +50,7 @@ function Grafico({ titulo, children }: { titulo: string; children: ReactElement 
 
 export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
   const [minutoAbierto, setMinutoAbierto] = useState<number | null>(null)
+  const [creando, setCreando] = useState(false)
 
   const { data, loading, error, reload } = useAsync(
     async () => {
@@ -119,11 +123,28 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
           </Box>
 
           <Box>
-            <Typography variant="h3" sx={{ mb: 1 }}>
-              Mediciones
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="h3">Mediciones</Typography>
+              {!creando && (
+                <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setCreando(true)}>
+                  Agregar medición
+                </Button>
+              )}
+            </Box>
             <MedicionesTabla mediciones={ordenadas} seleccionado={minutoAbierto} onVer={setMinutoAbierto} />
           </Box>
+
+          {creando && (
+            <MedicionForm
+              onCancelar={() => setCreando(false)}
+              onGuardar={async (valores) => {
+                const nuevo = await crearSnapshot(partidaId, jugadorId, valores)
+                setCreando(false)
+                reload()
+                setMinutoAbierto(nuevo.minuto)
+              }}
+            />
+          )}
 
           {minutoAbierto !== null && (
             <SnapshotDetalle
