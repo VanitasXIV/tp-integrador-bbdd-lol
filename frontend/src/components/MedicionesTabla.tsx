@@ -14,9 +14,10 @@ interface Props {
   /** Minuto del snapshot abierto, para resaltar la fila. */
   seleccionado?: number | null
   onVer: (minuto: number) => void
+  onEditar: (minuto: number) => void
 }
 
-export function MedicionesTabla({ mediciones, seleccionado, onVer }: Props) {
+export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar }: Props) {
   if (mediciones.length === 0) {
     return (
       <Typography color="text.secondary">
@@ -43,9 +44,12 @@ export function MedicionesTabla({ mediciones, seleccionado, onVer }: Props) {
               <TableCell>{formatMiles(m.oro)}</TableCell>
               <TableCell>{m.cs}</TableCell>
               <TableCell>{formatMiles(m.xp)}</TableCell>
-              <TableCell align="right">
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                 <Button size="small" variant="outlined" onClick={() => onVer(m.minuto)}>
                   Ver
+                </Button>
+                <Button size="small" variant="outlined" sx={{ ml: 1 }} onClick={() => onEditar(m.minuto)}>
+                  Editar
                 </Button>
               </TableCell>
             </TableRow>

@@ -19,3 +19,10 @@ export const crearSnapshot = (partidaId: string, jugadorId: number, snapshot: Sn
     method: 'POST',
     body: JSON.stringify(snapshot),
   })
+
+/** Modificación de un snapshot (#14): reescribe el punto en InfluxDB. Responde 404 si no existe y 400 si los datos no son válidos. */
+export const modificarSnapshot = (partidaId: string, jugadorId: number, snapshot: Snapshot) =>
+  http<Snapshot>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${snapshot.minuto}`, {
+    method: 'PUT',
+    body: JSON.stringify(snapshot),
+  })
