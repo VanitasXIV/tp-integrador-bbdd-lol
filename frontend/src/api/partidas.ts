@@ -26,3 +26,7 @@ export const modificarSnapshot = (partidaId: string, jugadorId: number, snapshot
     method: 'PUT',
     body: JSON.stringify(snapshot),
   })
+
+/** Baja de un snapshot (#15): delete por predicado en InfluxDB. Responde 404 si no existe. */
+export const eliminarSnapshot = (partidaId: string, jugadorId: number, minuto: number) =>
+  http<void>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${minuto}`, { method: 'DELETE' })
