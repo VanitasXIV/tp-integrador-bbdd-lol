@@ -25,7 +25,7 @@ import { formatDuracion, formatFecha, formatMiles } from '../utils/format'
 export function PartidasPage() {
   const { partidaId, jugadorId } = useParams()
   const navigate = useNavigate()
-  const seleccionada = partidaId ? Number(partidaId) : null
+  const seleccionada = partidaId ?? null
   const jugadorAbierto = jugadorId ? Number(jugadorId) : null
 
   const { data, loading, error, reload } = useAsync(listarPartidas, [])
@@ -47,7 +47,7 @@ export function PartidasPage() {
     }
   }
 
-  const alternar = (id: number) => navigate(seleccionada === id ? '/' : `/partidas/${id}`)
+  const alternar = (id: string) => navigate(seleccionada === id ? '/' : `/partidas/${id}`)
 
   return (
     <>

@@ -1,7 +1,8 @@
 export type Equipo = 'AZUL' | 'ROJO'
 
 export interface Partida {
-  id: number
+  /** Id de Riot, por ejemplo "EUW1_7697601501" */
+  id: string
   fecha: string // ISO 8601
   duracionSegundos: number
   equipoGanador: Equipo

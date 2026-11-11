@@ -24,7 +24,7 @@ import { Estado } from './Estado'
 import { MedicionesTabla } from './MedicionesTabla'
 
 interface Props {
-  partidaId: number
+  partidaId: string
   jugadorId: number
   onClose: () => void
 }
@@ -95,13 +95,13 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
                 <Line type="monotone" dataKey="oro" stroke={ORO} strokeWidth={3} />
               </LineChart>
             </Grafico>
-            <Grafico titulo="Daño por minuto">
+            <Grafico titulo="Experiencia (XP)">
               <BarChart data={ordenadas}>
                 <CartesianGrid stroke="#1E2328" strokeDasharray="3 3" />
                 <XAxis dataKey="minuto" stroke="#A09B8C" />
                 <YAxis stroke="#A09B8C" />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="dano" fill={COLOR_AZUL} />
+                <Bar dataKey="xp" fill={COLOR_AZUL} />
               </BarChart>
             </Grafico>
             <Grafico titulo="Farmeo (CS)">
