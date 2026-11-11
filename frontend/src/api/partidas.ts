@@ -1,5 +1,5 @@
 import { http } from './client'
-import type { Medicion, Partida, PartidaDetalle, Snapshot } from '../types'
+import type { Medicion, ObjetivosEquipo, Partida, PartidaDetalle, Snapshot } from '../types'
 
 // Ajustá estas rutas a los endpoints reales del backend.
 export const listarPartidas = () => http<Partida[]>('/partidas')
@@ -30,3 +30,7 @@ export const modificarSnapshot = (partidaId: string, jugadorId: number, snapshot
 /** Baja de un snapshot (#15): delete por predicado en InfluxDB. Responde 404 si no existe. */
 export const eliminarSnapshot = (partidaId: string, jugadorId: number, minuto: number) =>
   http<void>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${minuto}`, { method: 'DELETE' })
+
+/** Objetivos de cada equipo por minuto (InfluxDB). */
+export const listarObjetivos = (partidaId: string) =>
+  http<ObjetivosEquipo[]>(`/partidas/${partidaId}/objetivos`)

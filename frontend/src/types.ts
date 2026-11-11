@@ -55,3 +55,22 @@ export interface Snapshot {
   deaths: number
   assists: number
 }
+
+/** Objetivos acumulados de un equipo en un minuto (InfluxDB, team_snapshot). */
+export interface ObjetivosEquipo {
+  minuto: number
+  /** 100 = azul, 200 = rojo */
+  lado: number
+  torres: number
+  inhibidores: number
+  dragonesFuego: number
+  dragonesAgua: number
+  dragonesTierra: number
+  dragonesAire: number
+  dragonesQuimtec: number
+  dragonesHextech: number
+  dragonesElder: number
+  barones: number
+  larvasVacio: number
+  heraldos: number
+}

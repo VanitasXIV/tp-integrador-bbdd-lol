@@ -7,12 +7,13 @@ import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
-import { obtenerPartida } from '../api/partidas'
+import { listarObjetivos, obtenerPartida } from '../api/partidas'
 import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO } from '../theme'
 import type { Equipo, Jugador } from '../types'
 import { CurvaOro } from './CurvaOro'
 import { Estado } from './Estado'
+import { Objetivos } from './Objetivos'
 
 interface Props {
   partidaId: string
@@ -30,7 +31,7 @@ function TablaEquipo(props: { equipo: Equipo; jugadores: Jugador[]; onVerJugador
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>Jugador</TableCell>
+            <TableCell>Rol</TableCell>
             <TableCell>Campeón</TableCell>
             <TableCell>K/D/A</TableCell>
             <TableCell />
@@ -60,18 +61,24 @@ function TablaEquipo(props: { equipo: Equipo; jugadores: Jugador[]; onVerJugador
 }
 
 export function PartidaDetalle({ partidaId, onVerJugador }: Props) {
-  const { data, loading, error, reload } = useAsync(() => obtenerPartida(partidaId), [partidaId])
+  const { data, loading, error, reload } = useAsync(async () => {
+    const [partida, objetivos] = await Promise.all([obtenerPartida(partidaId), listarObjetivos(partidaId)])
+    return { ...partida, objetivos }
+  }, [partidaId])
 
   return (
     <Box sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Estado loading={loading} error={error} onRetry={reload}>
         {data && (
           <>
-            <Box>
-              <Typography variant="h3" sx={{ mb: 1 }}>
-                Curva de oro
-              </Typography>
-              <CurvaOro datos={data.curvaOro} />
+            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '3fr 2fr' } }}>
+              <Box>
+                <Typography variant="h3" sx={{ mb: 1 }}>
+                  Curva de oro
+                </Typography>
+                <CurvaOro datos={data.curvaOro} />
+              </Box>
+              <Objetivos objetivos={data.objetivos} />
             </Box>
             <Box
               sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}
