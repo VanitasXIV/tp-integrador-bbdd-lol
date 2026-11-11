@@ -43,7 +43,7 @@ export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar, onB
             <TableRow key={m.id} hover selected={seleccionado === m.minuto}>
               <TableCell>{m.minuto}</TableCell>
               <TableCell>{formatMiles(m.oro)}</TableCell>
-              <TableCell>{m.cs}</TableCell>
+              <TableCell>{m.cs + m.csJungla}</TableCell>
               <TableCell>{formatMiles(m.xp)}</TableCell>
               <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                 <Button size="small" variant="outlined" onClick={() => onVer(m.minuto)}>
