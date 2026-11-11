@@ -140,8 +140,8 @@ Los endpoints y el formato de las respuestas están en [`backend/README.md`](bac
 ```bash
 cd frontend
 cp .env.example .env                   # VITE_API_URL apunta al backend
-npm install                            # solo la primera vez
-npm run dev
+pnpm install                            # solo la primera vez
+pnpm dev
 ```
 
 Abrir <http://localhost:5173>. Si el backend corre en otro puerto, cambiar
