@@ -154,10 +154,13 @@ volver a correr `npm run dev`.
 2. **Partida:** "Ver detalle" despliega la curva de oro y los jugadores de cada equipo con su K/D/A.
 3. **Jugador:** "Ver métricas" abre el oro, la experiencia y el CS minuto a minuto.
 
-El motor de los listados se puede elegir desde la API agregando
-`?motor=postgres` o `?motor=influx` (por ejemplo,
-<http://localhost:8080/partidas?motor=influx>). El selector en el frontend
-está pendiente (#10).
+Por defecto, los listados de partidas y de jugadores se leen de PostgreSQL.
+Para comprobar el backend polimórfico, se puede arrancar el backend leyéndolos
+de InfluxDB; la aplicación tiene que mostrar exactamente los mismos datos:
+
+```bash
+MOTOR_POR_DEFECTO=influx ./gradlew bootRun
+```
 
 ### 5. Tests del backend
 
