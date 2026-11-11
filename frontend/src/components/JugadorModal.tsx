@@ -19,9 +19,17 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { crearSnapshot, listarMediciones, modificarSnapshot, obtenerPartida, obtenerSnapshot } from '../api/partidas'
+import {
+  crearSnapshot,
+  eliminarSnapshot,
+  listarMediciones,
+  modificarSnapshot,
+  obtenerPartida,
+  obtenerSnapshot,
+} from '../api/partidas'
 import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO, HEXTECH, ORO } from '../theme'
+import { ConfirmarBorrado } from './ConfirmarBorrado'
 import { Estado } from './Estado'
 import { MedicionForm } from './MedicionForm'
 import { MedicionesTabla } from './MedicionesTabla'
@@ -82,6 +90,7 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
   const [minutoAbierto, setMinutoAbierto] = useState<number | null>(null)
   const [creando, setCreando] = useState(false)
   const [editando, setEditando] = useState<number | null>(null)
+  const [borrando, setBorrando] = useState<number | null>(null)
   /** Cambia después de cada alta o edición para que el detalle del snapshot se vuelva a pedir. */
   const [version, setVersion] = useState(0)
 
@@ -180,6 +189,7 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
                 setCreando(false)
                 setEditando(minuto)
               }}
+              onBorrar={setBorrando}
             />
           </Box>
 
@@ -222,6 +232,21 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
           )}
         </Estado>
       </DialogContent>
+
+      {borrando !== null && (
+        <ConfirmarBorrado
+          minuto={borrando}
+          descripcion={jugador ? `${jugador.nombre} (${jugador.campeon})` : `el jugador ${jugadorId}`}
+          onCancelar={() => setBorrando(null)}
+          onConfirmar={async () => {
+            await eliminarSnapshot(partidaId, jugadorId, borrando)
+            if (minutoAbierto === borrando) setMinutoAbierto(null)
+            if (editando === borrando) setEditando(null)
+            setBorrando(null)
+            reload()
+          }}
+        />
+      )}
     </Dialog>
   )
 }
