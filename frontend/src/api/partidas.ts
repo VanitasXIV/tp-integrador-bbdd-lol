@@ -7,6 +7,9 @@ export const listarPartidas = () => http<Partida[]>('/partidas')
 export const crearPartidaSimulada = () =>
   http<Partida>('/partidas/simulada', { method: 'POST' })
 
+export const eliminarPartida = (id: string) =>
+  http<void>(`/partidas/${id}`, { method: 'DELETE' })
+
 export const obtenerPartida = (id: string) => http<PartidaDetalle>(`/partidas/${id}`)
 
 export const listarMediciones = (partidaId: string, jugadorId: number) =>
@@ -29,10 +32,6 @@ export const modificarSnapshot = (partidaId: string, jugadorId: number, snapshot
     method: 'PUT',
     body: JSON.stringify(snapshot),
   })
-
-/** Baja de un snapshot (#15): delete por predicado en InfluxDB. Responde 404 si no existe. */
-export const eliminarSnapshot = (partidaId: string, jugadorId: number, minuto: number) =>
-  http<void>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${minuto}`, { method: 'DELETE' })
 
 /** Objetivos de cada equipo por minuto (InfluxDB). */
 export const listarObjetivos = (partidaId: string) =>

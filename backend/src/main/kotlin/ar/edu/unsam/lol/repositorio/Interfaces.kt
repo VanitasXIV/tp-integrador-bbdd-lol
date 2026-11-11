@@ -38,6 +38,7 @@ interface ParticipanteRepository {
 interface PartidaInfoRepository {
     fun listar(): List<PartidaInfo>
     fun buscar(partidaId: String): PartidaInfo?
+    fun eliminar(partidaId: String): Boolean
     fun buscarParticipante(participanteId: Long): ParticipanteResumen?
     /** Código de rol -> nombre para mostrar ("TOP" -> "Top"). */
     fun nombresDeRoles(): Map<String, String>
@@ -59,6 +60,8 @@ interface SnapshotRepository {
     fun ultimosPorParticipante(partidaId: String, inicio: LocalDateTime): Map<Long, Snapshot>
     /** Por partida, la suma del último oro total de cada jugador. */
     fun oroTotalPorPartida(): Map<String, Long>
+    /** Elimina los snapshots de jugadores y equipos de una partida. */
+    fun eliminarPartida(partidaId: String, inicio: LocalDateTime)
     fun curvaOro(partidaId: String, inicio: LocalDateTime): List<PuntoCurvaOro>
     fun objetivos(partidaId: String, inicio: LocalDateTime): List<ObjetivosEquipo>
 

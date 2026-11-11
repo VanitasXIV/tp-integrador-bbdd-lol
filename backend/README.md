@@ -142,6 +142,12 @@ Ordenado de la partida más reciente a la más antigua.
 - `kills`, `deaths`, `assists`, `oroTotal`, `cs` y `nivel` son del último snapshot del jugador en InfluxDB (0 si no tiene snapshots).
 - `curvaOro` es la misma lista que devuelve `GET /partidas/{id}/curva-oro`.
 
+### `DELETE /partidas/{id}`
+
+Elimina la partida y sus participantes en PostgreSQL, además de sus snapshots de
+participante y equipo en InfluxDB. Responde `204`; si la partida no existe,
+responde `404`.
+
 ### `GET /partidas/{id}/jugadores/{jugadorId}/mediciones`
 
 Los snapshots de un jugador con el formato de "medición" del frontend, ordenados por minuto (InfluxDB, solo lectura). `id` es el minuto y `oro` es el oro total.

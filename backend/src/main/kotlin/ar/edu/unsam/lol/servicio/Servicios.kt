@@ -15,6 +15,7 @@ import ar.edu.unsam.lol.repositorio.PartidaRepository
 import ar.edu.unsam.lol.repositorio.ParticipanteRepository
 import ar.edu.unsam.lol.repositorio.SnapshotRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 // =====================================================================
@@ -217,6 +218,13 @@ class PartidaService(
     fun objetivos(partidaId: String): List<ObjetivosEquipo> {
         val partida = buscarPartida(partidaId)
         return snapshots.objetivos(partidaId, partida.fechaInicio)
+    }
+
+    @Transactional
+    fun eliminar(partidaId: String) {
+        val partida = buscarPartida(partidaId)
+        if (!info.eliminar(partidaId)) throw NoEncontradoException("No existe la partida $partidaId")
+        snapshots.eliminarPartida(partidaId, partida.fechaInicio)
     }
 
     private fun buscarPartida(partidaId: String): PartidaInfo =

@@ -17,8 +17,9 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Stack from '@mui/material/Stack'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { crearPartidaSimulada, listarPartidas } from '../api/partidas'
+import { crearPartidaSimulada, eliminarPartida, listarPartidas } from '../api/partidas'
 import { Estado } from '../components/Estado'
+import { ConfirmarBorradoPartida } from '../components/ConfirmarBorradoPartida'
 import { JugadorModal } from '../components/JugadorModal'
 import { PartidaDetalle } from '../components/PartidaDetalle'
 import { useAsync } from '../hooks/useAsync'
@@ -33,6 +34,7 @@ export function PartidasPage() {
   const [creando, setCreando] = useState(false)
   const [mensaje, setMensaje] = useState<string>()
   const [errorCreacion, setErrorCreacion] = useState<string>()
+  const [partidaABorrar, setPartidaABorrar] = useState<string | null>(null)
 
   const { data, loading, error, reload } = useAsync(listarPartidas, [])
 
@@ -51,6 +53,14 @@ export function PartidasPage() {
     } finally {
       setCreando(false)
     }
+  }
+
+  const borrarPartida = async (id: string) => {
+    await eliminarPartida(id)
+    setPartidaABorrar(null)
+    setMensaje(`Partida ${id} eliminada.`)
+    if (seleccionada === id) navigate('/')
+    reload()
   }
 
   return (
@@ -107,7 +117,7 @@ export function PartidasPage() {
                       </TableCell>
                       <TableCell>{formatRango(p.rangoPromedio)}</TableCell>
                       <TableCell>{formatMiles(p.oroTotal)}</TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                         <Button
                           size="small"
                           variant={abierta ? 'contained' : 'outlined'}
@@ -120,6 +130,16 @@ export function PartidasPage() {
                           }
                         >
                           {abierta ? 'Ocultar detalle' : 'Ver detalle'}
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                          aria-label={`Borrar partida ${p.id}`}
+                          onClick={() => setPartidaABorrar(p.id)}
+                        >
+                          Borrar
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -151,6 +171,14 @@ export function PartidasPage() {
           partidaId={seleccionada}
           jugadorId={jugadorAbierto}
           onClose={() => navigate(`/partidas/${seleccionada}`)}
+        />
+      )}
+
+      {partidaABorrar !== null && (
+        <ConfirmarBorradoPartida
+          partidaId={partidaABorrar}
+          onCancelar={() => setPartidaABorrar(null)}
+          onConfirmar={() => borrarPartida(partidaABorrar)}
         />
       )}
     </>

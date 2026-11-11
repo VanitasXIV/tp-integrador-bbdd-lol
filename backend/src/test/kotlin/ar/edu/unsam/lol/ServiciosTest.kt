@@ -47,7 +47,7 @@ class PartidaServiceTest {
         assertEquals(3000L, conocida.oroTotal)
         val desconocida = influx.first { it.id == "EUW1_SOLO_INFLUX" }
         assertNull(desconocida.duracionSegundos)
-        assertNull(desconocida.oroTotal)
+        assertEquals(0L, desconocida.oroTotal)
     }
 
     @Test

@@ -70,6 +70,12 @@ class PartidaController(
         return conMotor(motor, servicio.detalle(partidaId, motor))
     }
 
+    @DeleteMapping("/{partidaId}")
+    fun eliminar(@PathVariable partidaId: String): ResponseEntity<Void> {
+        servicio.eliminar(partidaId)
+        return ResponseEntity.noContent().build()
+    }
+
     /** Snapshots de un jugador con el formato que usa el frontend (solo lectura). */
     @GetMapping("/{partidaId}/jugadores/{jugadorId}/mediciones")
     fun mediciones(@PathVariable partidaId: String, @PathVariable jugadorId: Long): List<Medicion> =
