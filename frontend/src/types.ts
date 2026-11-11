@@ -41,3 +41,17 @@ export interface Medicion {
   xp: number
 }
 
+
+/** Estado completo de un participante en un minuto (consulta individual, #12). */
+export interface Snapshot {
+  minuto: number
+  oroActual: number
+  oroTotal: number
+  cs: number
+  csJungla: number
+  xp: number
+  nivel: number
+  kills: number
+  deaths: number
+  assists: number
+}
