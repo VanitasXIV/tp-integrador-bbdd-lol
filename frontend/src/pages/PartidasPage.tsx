@@ -19,7 +19,7 @@ import { JugadorModal } from '../components/JugadorModal'
 import { PartidaDetalle } from '../components/PartidaDetalle'
 import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO, ORO } from '../theme'
-import { formatDuracion, formatFecha, formatMiles } from '../utils/format'
+import { formatDuracion, formatFecha, formatMiles, formatRango } from '../utils/format'
 
 export function PartidasPage() {
   const { partidaId, jugadorId } = useParams()
@@ -49,6 +49,7 @@ export function PartidasPage() {
                 <TableCell>Fecha</TableCell>
                 <TableCell>Duración</TableCell>
                 <TableCell>Resultado</TableCell>
+                <TableCell>Rango promedio</TableCell>
                 <TableCell>Oro total</TableCell>
                 <TableCell />
               </TableRow>
@@ -74,6 +75,7 @@ export function PartidasPage() {
                           sx={{ color: colorGanador, borderColor: colorGanador }}
                         />
                       </TableCell>
+                      <TableCell>{formatRango(p.rangoPromedio)}</TableCell>
                       <TableCell>{formatMiles(p.oroTotal)}</TableCell>
                       <TableCell align="right">
                         <Button
@@ -92,7 +94,7 @@ export function PartidasPage() {
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell colSpan={6} sx={{ p: 0, borderBottom: abierta ? undefined : 'none' }}>
+                      <TableCell colSpan={7} sx={{ p: 0, borderBottom: abierta ? undefined : 'none' }}>
                         <Collapse in={abierta} timeout="auto" unmountOnExit>
                           <PartidaDetalle
                             partidaId={p.id}

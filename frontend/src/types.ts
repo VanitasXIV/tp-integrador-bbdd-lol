@@ -6,6 +6,8 @@ export interface Partida {
   fecha: string // ISO 8601
   duracionSegundos: number
   equipoGanador: Equipo
+  /** Rango promedio de los jugadores, en inglés como en la base ("MASTER", "DIAMOND"…) */
+  rangoPromedio: string
   oroTotal: number
 }
 
