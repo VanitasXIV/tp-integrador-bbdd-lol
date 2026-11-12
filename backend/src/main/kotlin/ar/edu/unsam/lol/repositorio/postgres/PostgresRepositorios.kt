@@ -71,6 +71,9 @@ class PostgresPartidaInfoRepository(private val jdbc: JdbcTemplate) : PartidaInf
     override fun buscar(partidaId: String): PartidaInfo? =
         jdbc.query("$select WHERE id = ?", mapper, partidaId).firstOrNull()
 
+    override fun eliminar(partidaId: String): Boolean =
+        jdbc.update("DELETE FROM partidas WHERE id = ?", partidaId) > 0
+
     override fun buscarParticipante(participanteId: Long): ParticipanteResumen? =
         jdbc.query("$SELECT_PARTICIPANTE WHERE pa.id = ?", participanteMapper, participanteId).firstOrNull()
 

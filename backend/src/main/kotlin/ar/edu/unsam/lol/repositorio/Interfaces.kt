@@ -6,6 +6,7 @@ import ar.edu.unsam.lol.dominio.PartidaResumen
 import ar.edu.unsam.lol.dominio.ParticipanteResumen
 import ar.edu.unsam.lol.dominio.PuntoCurvaOro
 import ar.edu.unsam.lol.dominio.Snapshot
+import ar.edu.unsam.lol.dominio.SnapshotEquipo
 import ar.edu.unsam.lol.motor.Motor
 import java.time.LocalDateTime
 
@@ -37,6 +38,7 @@ interface ParticipanteRepository {
 interface PartidaInfoRepository {
     fun listar(): List<PartidaInfo>
     fun buscar(partidaId: String): PartidaInfo?
+    fun eliminar(partidaId: String): Boolean
     fun buscarParticipante(participanteId: Long): ParticipanteResumen?
     /** Código de rol -> nombre para mostrar ("TOP" -> "Top"). */
     fun nombresDeRoles(): Map<String, String>
@@ -58,6 +60,11 @@ interface SnapshotRepository {
     fun ultimosPorParticipante(partidaId: String, inicio: LocalDateTime): Map<Long, Snapshot>
     /** Por partida, la suma del último oro total de cada jugador. */
     fun oroTotalPorPartida(): Map<String, Long>
+    /** Elimina los snapshots de jugadores y equipos de una partida. */
+    fun eliminarPartida(partidaId: String, inicio: LocalDateTime)
     fun curvaOro(partidaId: String, inicio: LocalDateTime): List<PuntoCurvaOro>
     fun objetivos(partidaId: String, inicio: LocalDateTime): List<ObjetivosEquipo>
+
+    /** Guarda un punto del measurement de estado de equipos. */
+    fun guardarEquipo(partidaId: String, snapshot: SnapshotEquipo, inicio: LocalDateTime)
 }

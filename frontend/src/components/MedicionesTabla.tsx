@@ -15,10 +15,9 @@ interface Props {
   seleccionado?: number | null
   onVer: (minuto: number) => void
   onEditar: (minuto: number) => void
-  onBorrar: (minuto: number) => void
 }
 
-export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar, onBorrar }: Props) {
+export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar }: Props) {
   if (mediciones.length === 0) {
     return (
       <Typography color="text.secondary">
@@ -51,9 +50,6 @@ export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar, onB
                 </Button>
                 <Button size="small" variant="outlined" sx={{ ml: 1 }} onClick={() => onEditar(m.minuto)}>
                   Editar
-                </Button>
-                <Button size="small" variant="outlined" color="error" sx={{ ml: 1 }} onClick={() => onBorrar(m.minuto)}>
-                  Borrar
                 </Button>
               </TableCell>
             </TableRow>

@@ -8,6 +8,7 @@ import ar.edu.unsam.lol.dominio.PartidaResumen
 import ar.edu.unsam.lol.dominio.ParticipanteResumen
 import ar.edu.unsam.lol.dominio.PuntoCurvaOro
 import ar.edu.unsam.lol.dominio.Snapshot
+import ar.edu.unsam.lol.dominio.SnapshotEquipo
 import ar.edu.unsam.lol.motor.Motor
 import ar.edu.unsam.lol.repositorio.PartidaRepository
 import ar.edu.unsam.lol.repositorio.ParticipanteRepository
@@ -35,6 +36,9 @@ private const val MINUTO_PRIMER_SNAPSHOT = 5L
 
 /** Los minutos válidos van de 1 a 90: el rango de una partida cubre 91 minutos. */
 private val DURACION_RANGO: Duration = Duration.ofMinutes(91)
+
+/** Incluye snapshots futuros que se escriben al simular una partida completa. */
+private fun rangoCompleto() = "range(start: $DESDE_SIEMPRE, stop: ${Instant.now().plus(DURACION_RANGO)})"
 
 /** Escapa un valor para usarlo dentro de un string de Flux (evita inyección). */
 internal fun flux(valor: String): String = "\"" + valor.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
@@ -71,7 +75,7 @@ class InfluxPartidaRepository(client: InfluxDBClient, props: InfluxProperties) :
     override fun listar(): List<PartidaResumen> {
         val query = """
             $desde
-              |> range(start: $DESDE_SIEMPRE)
+              |> ${rangoCompleto()}
               |> filter(fn: (r) => r._measurement == "$M_EQUIPO" and r._field == "towers" and r.side == "${Lados.AZUL}")
               |> group(columns: ["match_id"])
               |> sort(columns: ["_time"])
@@ -97,7 +101,7 @@ class InfluxParticipanteRepository(client: InfluxDBClient, props: InfluxProperti
     override fun listarPorPartida(partidaId: String): List<ParticipanteResumen> {
         val query = """
             $desde
-              |> range(start: $DESDE_SIEMPRE)
+              |> ${rangoCompleto()}
               |> filter(fn: (r) => r._measurement == "$M_PARTICIPANTE" and r._field == "total_gold" and r.match_id == ${flux(partidaId)})
               |> group(columns: ["participant_id", "side", "role", "champion"])
               |> last()
@@ -184,6 +188,27 @@ class InfluxSnapshotRepository(client: InfluxDBClient, props: InfluxProperties) 
         client.writeApiBlocking.writePoint(props.bucket, props.org, punto)
     }
 
+    override fun guardarEquipo(partidaId: String, snapshot: SnapshotEquipo, inicio: LocalDateTime) {
+        val t = inicio.utc().plus(Duration.ofMinutes(snapshot.minuto.toLong()))
+        val punto = Point.measurement(M_EQUIPO)
+            .addTag("match_id", partidaId)
+            .addTag("side", snapshot.lado.toString())
+            .addField("towers", snapshot.torres)
+            .addField("inhibitors", snapshot.inhibidores)
+            .addField("dragons_fire", snapshot.dragonesFuego)
+            .addField("dragons_water", snapshot.dragonesAgua)
+            .addField("dragons_earth", snapshot.dragonesTierra)
+            .addField("dragons_air", snapshot.dragonesAire)
+            .addField("dragons_chemtech", snapshot.dragonesQuimtec)
+            .addField("dragons_hextech", snapshot.dragonesHextech)
+            .addField("dragons_elder", snapshot.dragonesElder)
+            .addField("barons", snapshot.barones)
+            .addField("void_grubs", snapshot.larvasVacio)
+            .addField("heralds", snapshot.heraldos)
+            .time(t, WritePrecision.S)
+        client.writeApiBlocking.writePoint(props.bucket, props.org, punto)
+    }
+
     override fun eliminar(participante: ParticipanteResumen, inicio: LocalDateTime, minuto: Int) {
         val t = inicio.utc().plus(Duration.ofMinutes(minuto.toLong()))
         // InfluxDB no tiene DELETE por id: se borra por predicado sobre tags
@@ -214,14 +239,33 @@ class InfluxSnapshotRepository(client: InfluxDBClient, props: InfluxProperties) 
         // last() actúa sobre cada serie (un jugador); después se suma por partida.
         val query = """
             $desde
-              |> range(start: $DESDE_SIEMPRE)
+              |> ${rangoCompleto()}
               |> filter(fn: (r) => r._measurement == "$M_PARTICIPANTE" and r._field == "total_gold")
+              |> group(columns: ["match_id", "participant_id"])
+              |> sort(columns: ["_time"])
               |> last()
               |> group(columns: ["match_id"])
               |> sum()
               |> group()
         """.trimIndent()
         return consultar(query).associate { it.texto("match_id") to it.long("_value") }
+    }
+
+    override fun eliminarPartida(partidaId: String, inicio: LocalDateTime) {
+        val desde = inicio.utc()
+        val hasta = desde.plus(DURACION_RANGO)
+        val desdeUtc = OffsetDateTime.ofInstant(desde, ZoneOffset.UTC)
+        val hastaUtc = OffsetDateTime.ofInstant(hasta, ZoneOffset.UTC)
+
+        listOf(M_PARTICIPANTE, M_EQUIPO).forEach { medicion ->
+            client.deleteApi.delete(
+                desdeUtc,
+                hastaUtc,
+                "_measurement=${flux(medicion)} AND match_id=${flux(partidaId)}",
+                props.bucket,
+                props.org,
+            )
+        }
     }
 
     /** Consulta compleja (punto 7): oro total de cada lado por minuto y su diferencia. */

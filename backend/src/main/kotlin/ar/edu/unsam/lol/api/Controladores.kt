@@ -11,6 +11,7 @@ import ar.edu.unsam.lol.servicio.PartidaListado
 import ar.edu.unsam.lol.servicio.PartidaService
 import ar.edu.unsam.lol.servicio.SnapshotEntrada
 import ar.edu.unsam.lol.servicio.SnapshotService
+import ar.edu.unsam.lol.servicio.SimulacionService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -43,7 +44,12 @@ class PartidaController(
     private val servicio: PartidaService,
     private val snapshots: SnapshotService,
     private val resolver: MotorResolver,
+    private val simulacion: SimulacionService,
 ) {
+
+    @PostMapping("/simulada")
+    fun crearSimulada(): ResponseEntity<PartidaListado> =
+        ResponseEntity.status(HttpStatus.CREATED).body(simulacion.crear())
 
     @GetMapping
     fun listar(
@@ -62,6 +68,12 @@ class PartidaController(
     ): ResponseEntity<PartidaDetalle> {
         val motor = resolver.resolver(parametro, header)
         return conMotor(motor, servicio.detalle(partidaId, motor))
+    }
+
+    @DeleteMapping("/{partidaId}")
+    fun eliminar(@PathVariable partidaId: String): ResponseEntity<Void> {
+        servicio.eliminar(partidaId)
+        return ResponseEntity.noContent().build()
     }
 
     /** Snapshots de un jugador con el formato que usa el frontend (solo lectura). */

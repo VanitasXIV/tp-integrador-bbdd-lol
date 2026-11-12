@@ -8,14 +8,12 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 
 interface Props {
-  minuto: number
-  descripcion: string
+  partidaId: string
   onConfirmar: () => Promise<void>
   onCancelar: () => void
 }
 
-/** Pide confirmación antes de borrar un snapshot (#15). */
-export function ConfirmarBorrado({ minuto, descripcion, onConfirmar, onCancelar }: Props) {
+export function ConfirmarBorradoPartida({ partidaId, onConfirmar, onCancelar }: Props) {
   const [borrando, setBorrando] = useState(false)
   const [error, setError] = useState<string>()
 
@@ -25,30 +23,26 @@ export function ConfirmarBorrado({ minuto, descripcion, onConfirmar, onCancelar 
     try {
       await onConfirmar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo borrar la medición.')
+      setError(e instanceof Error ? e.message : 'No se pudo borrar la partida.')
       setBorrando(false)
     }
   }
 
   return (
-    <Dialog open onClose={borrando ? undefined : onCancelar} aria-labelledby="titulo-borrar">
-      <DialogTitle id="titulo-borrar">¿Borrar la medición del minuto {minuto}?</DialogTitle>
+    <Dialog open onClose={borrando ? undefined : onCancelar} aria-labelledby="titulo-borrar-partida">
+      <DialogTitle id="titulo-borrar-partida">¿Borrar la partida #{partidaId}?</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Se elimina de InfluxDB el snapshot de {descripcion} en el minuto {minuto}. Esta acción no se puede deshacer.
+          Se eliminarán la partida, sus participantes y sus métricas. Esta acción no se puede deshacer.
         </DialogContentText>
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancelar} disabled={borrando}>
           Cancelar
         </Button>
         <Button color="error" variant="contained" onClick={confirmar} disabled={borrando}>
-          {borrando ? 'Borrando…' : 'Borrar'}
+          {borrando ? 'Borrando…' : 'Borrar partida'}
         </Button>
       </DialogActions>
     </Dialog>

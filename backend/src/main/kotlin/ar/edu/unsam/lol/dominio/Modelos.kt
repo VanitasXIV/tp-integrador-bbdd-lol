@@ -80,3 +80,21 @@ data class ObjetivosEquipo(
     val larvasVacio: Long,
     val heraldos: Long,
 )
+
+/** Punto sintético de un equipo usado por el simulador de partidas. */
+data class SnapshotEquipo(
+    val minuto: Int,
+    val lado: Int,
+    val torres: Long,
+    val inhibidores: Long,
+    val dragonesFuego: Long,
+    val dragonesAgua: Long,
+    val dragonesTierra: Long,
+    val dragonesAire: Long,
+    val dragonesQuimtec: Long,
+    val dragonesHextech: Long,
+    val dragonesElder: Long,
+    val barones: Long,
+    val larvasVacio: Long,
+    val heraldos: Long,
+)

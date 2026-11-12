@@ -15,6 +15,7 @@ import ar.edu.unsam.lol.repositorio.PartidaRepository
 import ar.edu.unsam.lol.repositorio.ParticipanteRepository
 import ar.edu.unsam.lol.repositorio.SnapshotRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 // =====================================================================
@@ -33,9 +34,9 @@ data class PartidaListado(
     val duracionSegundos: Int?,
     val equipoGanador: String?,
     val parche: String?,
-    val rangoPromedio: String?,
+    val rangoPromedio: String,
     // Solo en InfluxDB: oro total que juntaron los 10 jugadores en la partida.
-    val oroTotal: Long?,
+    val oroTotal: Long,
 )
 
 /** Un participante con sus estadísticas al final de la partida. */
@@ -158,8 +159,14 @@ class PartidaService(
                 duracionSegundos = i?.duracionSegundos,
                 equipoGanador = i?.let { Lados.nombre(it.ladoGanador) },
                 parche = i?.let { parche(it.versionJuego) },
-                rangoPromedio = i?.rangoPromedio,
-                oroTotal = oroPorPartida[p.id],
+                // Las partidas simuladas siempre se crean en PostgreSQL; el valor
+                // por defecto mantiene la respuesta completa si se consulta una
+                // partida histórica que solo existe en InfluxDB.
+                rangoPromedio = i?.rangoPromedio ?: "UNRANKED",
+                // Una partida simulada siempre tiene snapshots en InfluxDB. El 0
+                // evita propagar null a clientes mientras se consulta una partida
+                // histórica incompleta.
+                oroTotal = oroPorPartida[p.id] ?: 0L,
             )
         }
     }
@@ -211,6 +218,13 @@ class PartidaService(
     fun objetivos(partidaId: String): List<ObjetivosEquipo> {
         val partida = buscarPartida(partidaId)
         return snapshots.objetivos(partidaId, partida.fechaInicio)
+    }
+
+    @Transactional
+    fun eliminar(partidaId: String) {
+        val partida = buscarPartida(partidaId)
+        if (!info.eliminar(partidaId)) throw NoEncontradoException("No existe la partida $partidaId")
+        snapshots.eliminarPartida(partidaId, partida.fechaInicio)
     }
 
     private fun buscarPartida(partidaId: String): PartidaInfo =

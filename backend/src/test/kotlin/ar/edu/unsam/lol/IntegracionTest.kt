@@ -1,6 +1,9 @@
 package ar.edu.unsam.lol
 
 import ar.edu.unsam.lol.motor.Motor
+import ar.edu.unsam.lol.dominio.ParticipanteResumen
+import ar.edu.unsam.lol.dominio.Snapshot
+import ar.edu.unsam.lol.repositorio.SnapshotRepository
 import ar.edu.unsam.lol.servicio.PartidaService
 import ar.edu.unsam.lol.servicio.RepositoriosPorMotor
 import ar.edu.unsam.lol.servicio.SnapshotEntrada
@@ -11,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.util.UUID
 
 /**
  * Corre contra las bases de Docker Compose con los datos iniciales cargados:
@@ -23,6 +29,7 @@ class IntegracionTest(
     @Autowired private val repositorios: RepositoriosPorMotor,
     @Autowired private val snapshots: SnapshotService,
     @Autowired private val partidas: PartidaService,
+    @Autowired private val snapshotRepository: SnapshotRepository,
 ) {
 
     @Test
@@ -53,6 +60,21 @@ class IntegracionTest(
         assertEquals(10, detalle.jugadores.size)
         assertEquals(postgres.first { it.id == PARTIDA }.oroTotal, detalle.oroTotal)
         assertEquals(snapshots.listar(PARTIDA, TOP_AZUL.id).size, detalle.curvaOro.size)
+    }
+
+    @Test
+    fun `el oro de snapshots futuros aparece en el listado`() {
+        val partidaId = "SIM_TEST_${UUID.randomUUID()}"
+        val participante = ParticipanteResumen(9_999_999_999L, partidaId, 100, "TOP", "Test")
+        val inicio = LocalDateTime.now(ZoneOffset.UTC).withNano(0)
+        val snapshot = Snapshot(5, 300, 12_345, 30, 0, 2_000, 5, 0, 0, 0)
+
+        try {
+            snapshotRepository.guardar(participante, inicio, snapshot)
+            assertEquals(12_345L, snapshotRepository.oroTotalPorPartida()[partidaId])
+        } finally {
+            snapshotRepository.eliminar(participante, inicio, snapshot.minuto)
+        }
     }
 
     @Test

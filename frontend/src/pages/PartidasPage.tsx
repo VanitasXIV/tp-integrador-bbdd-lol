@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Alert from '@mui/material/Alert'
 import Chip from '@mui/material/Chip'
 import Collapse from '@mui/material/Collapse'
 import Paper from '@mui/material/Paper'
@@ -12,9 +13,13 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
+import CircularProgress from '@mui/material/CircularProgress'
+import Stack from '@mui/material/Stack'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { listarPartidas } from '../api/partidas'
+import { crearPartidaSimulada, eliminarPartida, listarPartidas } from '../api/partidas'
 import { Estado } from '../components/Estado'
+import { ConfirmarBorradoPartida } from '../components/ConfirmarBorradoPartida'
 import { JugadorModal } from '../components/JugadorModal'
 import { PartidaDetalle } from '../components/PartidaDetalle'
 import { useAsync } from '../hooks/useAsync'
@@ -26,19 +31,54 @@ export function PartidasPage() {
   const navigate = useNavigate()
   const seleccionada = partidaId ?? null
   const jugadorAbierto = jugadorId ? Number(jugadorId) : null
+  const [creando, setCreando] = useState(false)
+  const [mensaje, setMensaje] = useState<string>()
+  const [errorCreacion, setErrorCreacion] = useState<string>()
+  const [partidaABorrar, setPartidaABorrar] = useState<string | null>(null)
 
   const { data, loading, error, reload } = useAsync(listarPartidas, [])
 
   const alternar = (id: string) => navigate(seleccionada === id ? '/' : `/partidas/${id}`)
 
+  const crearPartida = async () => {
+    setCreando(true)
+    setMensaje(undefined)
+    setErrorCreacion(undefined)
+    try {
+      const partida = await crearPartidaSimulada()
+      setMensaje(`Partida ${partida.id} creada.`)
+      reload()
+    } catch (e) {
+      setErrorCreacion(e instanceof Error ? e.message : 'No se pudo crear la partida.')
+    } finally {
+      setCreando(false)
+    }
+  }
+
+  const borrarPartida = async (id: string) => {
+    await eliminarPartida(id)
+    setPartidaABorrar(null)
+    setMensaje(`Partida ${id} eliminada.`)
+    if (seleccionada === id) navigate('/')
+    reload()
+  }
+
   return (
     <>
-      <Box sx={{ mb: 3 }}>
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', sm: 'center' }} spacing={2} sx={{ mb: 3 }}>
+        <Box>
         <Typography variant="h1" component="h1">
           Partidas
         </Typography>
         <Typography color="text.secondary">Elegí una partida para ver su detalle.</Typography>
-      </Box>
+        </Box>
+        <Button variant="contained" onClick={crearPartida} disabled={creando} startIcon={creando ? <CircularProgress size={18} color="inherit" /> : undefined}>
+          {creando ? 'Simulando partida…' : 'Simular partida'}
+        </Button>
+      </Stack>
+
+      {mensaje && <Alert severity="success" onClose={() => setMensaje(undefined)} sx={{ mb: 2 }}>{mensaje}</Alert>}
+      {errorCreacion && <Alert severity="error" onClose={() => setErrorCreacion(undefined)} sx={{ mb: 2 }}>{errorCreacion}</Alert>}
 
       <Estado loading={loading && !data} error={error} onRetry={reload}>
         <TableContainer component={Paper}>
@@ -77,7 +117,7 @@ export function PartidasPage() {
                       </TableCell>
                       <TableCell>{formatRango(p.rangoPromedio)}</TableCell>
                       <TableCell>{formatMiles(p.oroTotal)}</TableCell>
-                      <TableCell align="right">
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                         <Button
                           size="small"
                           variant={abierta ? 'contained' : 'outlined'}
@@ -90,6 +130,16 @@ export function PartidasPage() {
                           }
                         >
                           {abierta ? 'Ocultar detalle' : 'Ver detalle'}
+                        </Button>
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          sx={{ ml: 1 }}
+                          aria-label={`Borrar partida ${p.id}`}
+                          onClick={() => setPartidaABorrar(p.id)}
+                        >
+                          Borrar
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -121,6 +171,14 @@ export function PartidasPage() {
           partidaId={seleccionada}
           jugadorId={jugadorAbierto}
           onClose={() => navigate(`/partidas/${seleccionada}`)}
+        />
+      )}
+
+      {partidaABorrar !== null && (
+        <ConfirmarBorradoPartida
+          partidaId={partidaABorrar}
+          onCancelar={() => setPartidaABorrar(null)}
+          onConfirmar={() => borrarPartida(partidaABorrar)}
         />
       )}
     </>
