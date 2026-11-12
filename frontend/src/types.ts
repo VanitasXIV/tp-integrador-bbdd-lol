@@ -37,6 +37,7 @@ export interface Medicion {
   minuto: number
   oro: number
   cs: number
+  csJungla: number
   /** El dataset no tiene daño por minuto: se muestra la experiencia. */
   xp: number
 }
