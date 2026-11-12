@@ -154,14 +154,6 @@ volver a correr `npm run dev`.
 2. **Partida:** "Ver detalle" despliega la curva de oro y los jugadores de cada equipo con su K/D/A.
 3. **Jugador:** "Ver métricas" abre el oro, la experiencia y el CS minuto a minuto.
 
-Por defecto, los listados de partidas y de jugadores se leen de PostgreSQL.
-Para comprobar el backend polimórfico, se puede arrancar el backend leyéndolos
-de InfluxDB; la aplicación tiene que mostrar exactamente los mismos datos:
-
-```bash
-MOTOR_POR_DEFECTO=influx ./gradlew bootRun
-```
-
 ### 5. Tests del backend
 
 ```bash
