@@ -1,13 +1,38 @@
 import { http } from './client'
-import type { Medicion, Partida, PartidaDetalle } from '../types'
+import type { Medicion, ObjetivosEquipo, Partida, PartidaDetalle, Snapshot } from '../types'
 
 // Ajustá estas rutas a los endpoints reales del backend.
 export const listarPartidas = () => http<Partida[]>('/partidas')
 
-export const obtenerPartida = (id: number) => http<PartidaDetalle>(`/partidas/${id}`)
+export const crearPartidaSimulada = () =>
+  http<Partida>('/partidas/simulada', { method: 'POST' })
 
-export const listarMediciones = (partidaId: number, jugadorId: number) =>
+export const eliminarPartida = (id: string) =>
+  http<void>(`/partidas/${id}`, { method: 'DELETE' })
+
+export const obtenerPartida = (id: string) => http<PartidaDetalle>(`/partidas/${id}`)
+
+export const listarMediciones = (partidaId: string, jugadorId: number) =>
   http<Medicion[]>(`/partidas/${partidaId}/jugadores/${jugadorId}/mediciones`)
 
-// Pide al backend que genere una partida nueva y devuelve la partida creada.
-export const generarPartida = () => http<Partida>('/partidas', { method: 'POST' })
+/** Un snapshot puntual (participante + minuto). Responde 404 si no existe. */
+export const obtenerSnapshot = (partidaId: string, jugadorId: number, minuto: number) =>
+  http<Snapshot>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${minuto}`)
+
+/** Alta de un snapshot (#13). Responde 409 si el minuto ya tiene snapshot y 400 si los datos no son válidos. */
+export const crearSnapshot = (partidaId: string, jugadorId: number, snapshot: Snapshot) =>
+  http<Snapshot>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots`, {
+    method: 'POST',
+    body: JSON.stringify(snapshot),
+  })
+
+/** Modificación de un snapshot (#14): reescribe el punto en InfluxDB. Responde 404 si no existe y 400 si los datos no son válidos. */
+export const modificarSnapshot = (partidaId: string, jugadorId: number, snapshot: Snapshot) =>
+  http<Snapshot>(`/partidas/${partidaId}/participantes/${jugadorId}/snapshots/${snapshot.minuto}`, {
+    method: 'PUT',
+    body: JSON.stringify(snapshot),
+  })
+
+/** Objetivos de cada equipo por minuto (InfluxDB). */
+export const listarObjetivos = (partidaId: string) =>
+  http<ObjetivosEquipo[]>(`/partidas/${partidaId}/objetivos`)

@@ -1,3 +1,4 @@
+import Button from '@mui/material/Button'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -10,9 +11,13 @@ import { formatMiles } from '../utils/format'
 
 interface Props {
   mediciones: Medicion[]
+  /** Minuto del snapshot abierto, para resaltar la fila. */
+  seleccionado?: number | null
+  onVer: (minuto: number) => void
+  onEditar: (minuto: number) => void
 }
 
-export function MedicionesTabla({ mediciones }: Props) {
+export function MedicionesTabla({ mediciones, seleccionado, onVer, onEditar }: Props) {
   if (mediciones.length === 0) {
     return (
       <Typography color="text.secondary">
@@ -28,16 +33,25 @@ export function MedicionesTabla({ mediciones }: Props) {
             <TableCell>Minuto</TableCell>
             <TableCell>Oro</TableCell>
             <TableCell>CS</TableCell>
-            <TableCell>Daño</TableCell>
+            <TableCell>XP</TableCell>
+            <TableCell />
           </TableRow>
         </TableHead>
         <TableBody>
           {mediciones.map((m) => (
-            <TableRow key={m.id} hover>
+            <TableRow key={m.id} hover selected={seleccionado === m.minuto}>
               <TableCell>{m.minuto}</TableCell>
               <TableCell>{formatMiles(m.oro)}</TableCell>
-              <TableCell>{m.cs}</TableCell>
-              <TableCell>{formatMiles(m.dano)}</TableCell>
+              <TableCell>{m.cs + m.csJungla}</TableCell>
+              <TableCell>{formatMiles(m.xp)}</TableCell>
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <Button size="small" variant="outlined" onClick={() => onVer(m.minuto)}>
+                  Ver
+                </Button>
+                <Button size="small" variant="outlined" sx={{ ml: 1 }} onClick={() => onEditar(m.minuto)}>
+                  Editar
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

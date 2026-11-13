@@ -1,6 +1,8 @@
-import { useMemo, type ReactElement } from 'react'
+import { useMemo, useState, type ReactElement } from 'react'
 import CloseIcon from '@mui/icons-material/Close'
+import AddIcon from '@mui/icons-material/Add'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -17,16 +19,54 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { listarMediciones, obtenerPartida } from '../api/partidas'
+import {
+  crearSnapshot,
+  listarMediciones,
+  modificarSnapshot,
+  obtenerPartida,
+  obtenerSnapshot,
+} from '../api/partidas'
 import { useAsync } from '../hooks/useAsync'
 import { COLOR_AZUL, COLOR_ROJO, HEXTECH, ORO } from '../theme'
 import { Estado } from './Estado'
+import { MedicionForm } from './MedicionForm'
 import { MedicionesTabla } from './MedicionesTabla'
+import { SnapshotDetalle } from './SnapshotDetalle'
 
 interface Props {
-  partidaId: number
+  partidaId: string
   jugadorId: number
   onClose: () => void
+}
+
+/** Carga el snapshot completo y abre el formulario en modo edición (#14). */
+function EdicionSnapshot(props: {
+  partidaId: string
+  jugadorId: number
+  minuto: number
+  onGuardado: (minuto: number) => void
+  onCancelar: () => void
+}) {
+  const { partidaId, jugadorId, minuto, onGuardado, onCancelar } = props
+  const { data, loading, error, reload } = useAsync(
+    () => obtenerSnapshot(partidaId, jugadorId, minuto),
+    [partidaId, jugadorId, minuto],
+  )
+  return (
+    <Estado loading={loading} error={error} onRetry={reload}>
+      {data && (
+        <MedicionForm
+          key={minuto}
+          inicial={data}
+          onCancelar={onCancelar}
+          onGuardar={async (valores) => {
+            await modificarSnapshot(partidaId, jugadorId, valores)
+            onGuardado(valores.minuto)
+          }}
+        />
+      )}
+    </Estado>
+  )
 }
 
 const tooltipStyle = { background: '#0A1428', border: `1px solid ${ORO}` }
@@ -45,6 +85,12 @@ function Grafico({ titulo, children }: { titulo: string; children: ReactElement 
 }
 
 export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
+  const [minutoAbierto, setMinutoAbierto] = useState<number | null>(null)
+  const [creando, setCreando] = useState(false)
+  const [editando, setEditando] = useState<number | null>(null)
+  /** Cambia después de cada alta o edición para que el detalle del snapshot se vuelva a pedir. */
+  const [version, setVersion] = useState(0)
+
   const { data, loading, error, reload } = useAsync(
     async () => {
       const [partida, mediciones] = await Promise.all([
@@ -95,13 +141,13 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
                 <Line type="monotone" dataKey="oro" stroke={ORO} strokeWidth={3} />
               </LineChart>
             </Grafico>
-            <Grafico titulo="Daño por minuto">
+            <Grafico titulo="Experiencia (XP)">
               <BarChart data={ordenadas}>
                 <CartesianGrid stroke="#1E2328" strokeDasharray="3 3" />
                 <XAxis dataKey="minuto" stroke="#A09B8C" />
                 <YAxis stroke="#A09B8C" />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Bar dataKey="dano" fill={COLOR_AZUL} />
+                <Bar dataKey="xp" fill={COLOR_AZUL} />
               </BarChart>
             </Grafico>
             <Grafico titulo="Farmeo (CS)">
@@ -116,13 +162,73 @@ export function JugadorModal({ partidaId, jugadorId, onClose }: Props) {
           </Box>
 
           <Box>
-            <Typography variant="h3" sx={{ mb: 1 }}>
-              Mediciones
-            </Typography>
-            <MedicionesTabla mediciones={ordenadas} />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography variant="h3">Mediciones</Typography>
+              {!creando && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditando(null)
+                    setCreando(true)
+                  }}
+                >
+                  Agregar medición
+                </Button>
+              )}
+            </Box>
+            <MedicionesTabla
+              mediciones={ordenadas}
+              seleccionado={editando ?? minutoAbierto}
+              onVer={setMinutoAbierto}
+              onEditar={(minuto) => {
+                setCreando(false)
+                setEditando(minuto)
+              }}
+            />
           </Box>
+
+          {creando && (
+            <MedicionForm
+              onCancelar={() => setCreando(false)}
+              onGuardar={async (valores) => {
+                const nuevo = await crearSnapshot(partidaId, jugadorId, valores)
+                setCreando(false)
+                reload()
+                setVersion((v) => v + 1)
+                setMinutoAbierto(nuevo.minuto)
+              }}
+            />
+          )}
+
+          {editando !== null && (
+            <EdicionSnapshot
+              partidaId={partidaId}
+              jugadorId={jugadorId}
+              minuto={editando}
+              onCancelar={() => setEditando(null)}
+              onGuardado={(minuto) => {
+                setEditando(null)
+                reload()
+                setVersion((v) => v + 1)
+                setMinutoAbierto(minuto)
+              }}
+            />
+          )}
+
+          {minutoAbierto !== null && (
+            <SnapshotDetalle
+              key={`${minutoAbierto}-${version}`}
+              partidaId={partidaId}
+              jugadorId={jugadorId}
+              minuto={minutoAbierto}
+              onClose={() => setMinutoAbierto(null)}
+            />
+          )}
         </Estado>
       </DialogContent>
+
     </Dialog>
   )
 }
